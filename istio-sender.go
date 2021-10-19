@@ -7,6 +7,8 @@ import (
 	"log"
 	"net/http"
 
+	"go.opentelemetry.io/otel"
+        "go.opentelemetry.io/contrib/propagators/b3"
 	"github.com/signalfx/splunk-otel-go/distro"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
         "github.com/signalfx/splunk-otel-go/instrumentation/net/http/splunkhttp"
@@ -23,6 +25,8 @@ func main() {
 			panic(err)
 		}
 	}()
+
+	otel.SetTextMapPropagator(b3.New(b3.WithInjectEncoding(b3.B3MultipleHeader)))
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -43,7 +47,6 @@ func main() {
 	handler = otelhttp.NewHandler(handler, "my-go-client-app")
 	
 	http.ListenAndServe(":9090", handler)
-
 }
 
 func sendMessage(client http.Client, ctx context.Context) {
